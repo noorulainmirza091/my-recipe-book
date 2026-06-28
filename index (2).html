@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Recipe Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & base ───────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #1c1a17;
+      --ink-soft:  #5a5650;
+      --ink-muted: #9a9590;
+      --page:      #faf8f4;
+      --card:      #ffffff;
+      --spice:     #c0410f;
+      --spice-lt:  #f9ede7;
+      --sage:      #4a6741;
+      --sage-lt:   #eaf0e8;
+      --gold:      #b07d2a;
+      --gold-lt:   #faf2df;
+      --sea:       #2a6b8a;
+      --sea-lt:    #e4f0f6;
+      --border:    #e8e4dd;
+      --radius:    14px;
+      --shadow:    0 2px 14px rgba(28,26,23,.07);
+      --shadow-lg: 0 8px 32px rgba(28,26,23,.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--page);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      background: var(--ink);
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 120%, #c0410f33, transparent);
+      pointer-events: none;
+    }
+
+    .header-eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--spice);
+      margin-bottom: .7rem;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 700;
+      color: #faf8f4;
+      line-height: 1.08;
+    }
+
+    header h1 em {
+      font-style: italic;
+      color: #e8a07a;
+    }
+
+    header p {
+      margin-top: .9rem;
+      font-size: 15px;
+      color: #a09890;
+      font-weight: 300;
+    }
+
+    /* ── Controls bar ────────────────────────────────── */
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250,248,244,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink-muted);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: .6rem 1rem .6rem 2.4rem;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      background: var(--card);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .search-wrap input:focus { border-color: var(--spice); }
+    .search-wrap input::placeholder { color: var(--ink-muted); }
+
+    .filter-pills {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: .45rem 1rem;
+      border-radius: 50px;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: all .18s;
+    }
+
+    .pill:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #faf8f4;
+    }
+
+    /* ── Results count ───────────────────────────────── */
+    .results-bar {
+      padding: 1.4rem 2rem .6rem;
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    /* ── Grid ────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.4rem;
+      padding: .8rem 2rem 3rem;
+    }
+
+    /* ── Recipe card ─────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-thumb {
+      height: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      position: relative;
+    }
+
+    .card-category-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 50px;
+    }
+
+    .card-body { padding: 1.1rem 1.2rem; flex: 1; display: flex; flex-direction: column; }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .35rem;
+      line-height: 1.25;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--ink-muted);
+      display: flex;
+      gap: 1rem;
+      margin-bottom: .7rem;
+    }
+
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .card-footer {
+      margin-top: 1rem;
+      padding-top: .9rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tag-list { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: var(--page);
+      color: var(--ink-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-view {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--spice);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .btn-view:hover { text-decoration: underline; }
+
+    /* ── Empty state ─────────────────────────────────── */
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--ink-muted);
+    }
+
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    .empty h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--ink-soft);
+      margin-bottom: .4rem;
+    }
+
+    /* ── Modal overlay ────────────────────────────────── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28,26,23,.55);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      animation: slideUp .25s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.6rem 1.6rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .modal-emoji { font-size: 3rem; line-height: 1; }
+
+    .modal-title-block { flex: 1; }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: .3rem;
+    }
+
+    .modal-meta { font-size: 13px; color: var(--ink-muted); display: flex; gap: 1.2rem; flex-wrap: wrap; }
+
+    .modal-close {
+      background: var(--page);
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--ink-soft);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+
+    .modal-close:hover { background: var(--border); }
+
+    .modal-body { padding: 1.4rem 1.6rem 2rem; }
+
+    .modal-desc {
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.7;
+      margin-bottom: 1.4rem;
+      padding-bottom: 1.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: .8rem;
+      color: var(--ink);
+    }
+
+    .ingredients-list {
+      list-style: none;
+      margin-bottom: 1.6rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .4rem 1rem;
+    }
+
+    .ingredients-list li {
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .ingredients-list li::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--spice);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+    }
+
+    .steps-list li {
+      display: flex;
+      gap: .9rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--spice-lt);
+      color: var(--spice);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .steps-list li p {
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      line-height: 1.65;
+    }
+
+    /* ── Category colours ────────────────────────────── */
+    .cat-breakfast .card-thumb { background: var(--gold-lt); }
+    .cat-breakfast .card-category-badge { background: var(--gold-lt); color: var(--gold); }
+
+    .cat-lunch .card-thumb { background: var(--sage-lt); }
+    .cat-lunch .card-category-badge { background: var(--sage-lt); color: var(--sage); }
+
+    .cat-dinner .card-thumb { background: var(--spice-lt); }
+    .cat-dinner .card-category-badge { background: var(--spice-lt); color: var(--spice); }
+
+    .cat-dessert .card-thumb { background: #f5edf8; }
+    .cat-dessert .card-category-badge { background: #f5edf8; color: #7a3d8a; }
+
+    .cat-snack .card-thumb { background: var(--sea-lt); }
+    .cat-snack .card-category-badge { background: var(--sea-lt); color: var(--sea); }
+
+    /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 600px) {
+      header { padding: 2rem 1.2rem 1.6rem; }
+      .controls { padding: .8rem 1rem; gap: .6rem; }
+      .grid { padding: .8rem 1rem 3rem; gap: 1rem; }
+      .results-bar { padding: 1rem 1rem .4rem; }
+      .ingredients-list { grid-template-columns: 1fr; }
+      .modal-header { padding: 1.2rem 1.2rem 0; }
+      .modal-body { padding: 1rem 1.2rem 1.6rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+      .modal { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────── -->
+<header>
+  <p class="header-eyebrow">Home Cooking Collection</p>
+  <h1>The <em>Recipe</em> Book</h1>
+  <p>Simple, delicious recipes for every occasion</p>
+</header>
+
+<!-- ── Controls ────────────────────────────────────── -->
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="search" id="searchInput" placeholder="Search recipes…" aria-label="Search recipes" />
+  </div>
+  <div class="filter-pills" role="group" aria-label="Filter by category">
+    <button class="pill active" data-cat="all">All</button>
+    <button class="pill" data-cat="breakfast">Breakfast</button>
+    <button class="pill" data-cat="lunch">Lunch</button>
+    <button class="pill" data-cat="dinner">Dinner</button>
+    <button class="pill" data-cat="dessert">Dessert</button>
+    <button class="pill" data-cat="snack">Snack</button>
+  </div>
+</div>
+
+<p class="results-bar" id="resultsBar"></p>
+
+<!-- ── Recipe grid ──────────────────────────────────── -->
+<main class="grid" id="recipeGrid" aria-live="polite"></main>
+
+<!-- ── Modal ────────────────────────────────────────── -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-emoji" id="modalEmoji"></div>
+      <div class="modal-title-block">
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <div class="modal-meta" id="modalMeta"></div>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close recipe">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc" id="modalDesc"></p>
+      <h3 class="modal-section-title">Ingredients</h3>
+      <ul class="ingredients-list" id="modalIngredients"></ul>
+      <h3 class="modal-section-title">Steps</h3>
+      <ol class="steps-list" id="modalSteps"></ol>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Recipe data ───────────────────────────────────── */
+  const recipes = [
+    {
+      id: 1,
+      emoji: "🥞",
+      title: "Fluffy Buttermilk Pancakes",
+      category: "breakfast",
+      time: "20 min",
+      serves: "4",
+      difficulty: "Easy",
+      desc: "Light, golden stacks with a slight tang from buttermilk. Perfect weekend morning fuel.",
+      tags: ["vegetarian", "quick"],
+      ingredients: [
+        "1½ cups all-purpose flour",
+        "2 tbsp sugar",
+        "1 tsp baking powder",
+        "½ tsp baking soda",
+        "½ tsp salt",
+        "1¼ cups buttermilk",
+        "1 large egg",
+        "2 tbsp melted butter",
+        "1 tsp vanilla extract",
+        "Butter & maple syrup to serve"
+      ],
+      steps: [
+        "Whisk together the flour, sugar, baking powder, baking soda, and salt in a large bowl.",
+        "In a separate bowl, beat the buttermilk, egg, melted butter, and vanilla together.",
+        "Pour the wet ingredients into the dry ingredients and stir gently — lumps are fine. Do not overmix.",
+        "Heat a non-stick pan over medium heat and lightly grease with butter.",
+        "Pour ¼ cup of batter per pancake. Cook until bubbles form on the surface (about 2 min), then flip and cook 1 more minute.",
+        "Serve immediately with butter and maple syrup."
+      ]
+    },
+    {
+      id: 2,
+      emoji: "🥗",
+      title: "Greek Orzo Salad",
+      category: "lunch",
+      time: "25 min",
+      serves: "4",
+      difficulty: "Easy",
+      desc: "A bright, tangy pasta salad packed with olives, cucumber, and feta. Keeps well for next-day lunches.",
+      tags: ["vegetarian", "meal-prep"],
+      ingredients: [
+        "300g orzo pasta",
+        "200g cherry tomatoes, halved",
+        "1 cucumber, diced",
+        "1 red onion, finely sliced",
+        "100g kalamata olives",
+        "150g feta cheese, crumbled",
+        "Handful of fresh parsley",
+        "4 tbsp olive oil",
+        "2 tbsp red wine vinegar",
+        "1 tsp dried oregano",
+        "Salt and black pepper"
+      ],
+      steps: [
+        "Cook orzo in salted boiling water until al dente (about 8 min). Drain and rinse under cold water.",
+        "Whisk together olive oil, red wine vinegar, oregano, salt, and pepper in a small bowl to make the dressing.",
+        "Combine the cooled orzo with tomatoes, cucumber, red onion, and olives in a large bowl.",
+        "Pour the dressing over and toss everything well to coat.",
+        "Top with crumbled feta and chopped parsley. Serve immediately or refrigerate up to 2 days."
+      ]
+    },
+    {
+      id: 3,
+      emoji: "🍝",
+      title: "Classic Spaghetti Bolognese",
+      category: "dinner",
+      time: "55 min",
+      serves: "4",
+      difficulty: "Medium",
+      desc: "A slow-cooked meat sauce with depth and richness. Worth every minute on the stove.",
+      tags: ["family-favourite", "freezer-friendly"],
+      ingredients: [
+        "400g spaghetti",
+        "500g beef mince",
+        "1 onion, finely diced",
+        "2 garlic cloves, minced",
+        "1 carrot, finely diced",
+        "2 sticks celery, finely diced",
+        "400g tin chopped tomatoes",
+        "2 tbsp tomato purée",
+        "100ml red wine",
+        "1 tsp dried oregano",
+        "Parmesan and basil to serve"
+      ],
+      steps: [
+        "Heat olive oil in a large pan over medium heat. Soften the onion, carrot, and celery for 8–10 minutes.",
+        "Add garlic and cook for 1 minute, then add the mince. Break it up and brown all over.",
+        "Pour in the red wine and simmer until it reduces by half.",
+        "Stir in the chopped tomatoes, tomato purée, and oregano. Season with salt and pepper.",
+        "Reduce heat to low and simmer uncovered for at least 30 minutes, stirring occasionally.",
+        "Cook spaghetti according to packet instructions. Drain, reserving a little pasta water.",
+        "Toss pasta with the sauce, adding pasta water to loosen if needed. Serve with Parmesan and fresh basil."
+      ]
+    },
+    {
+      id: 4,
+      emoji: "🍋",
+      title: "Lemon Drizzle Cake",
+      category: "dessert",
+      time: "50 min",
+      serves: "8",
+      difficulty: "Easy",
+      desc: "A sharp, citrusy loaf with a crunchy sugar crust on top. One of those cakes that disappears quickly.",
+      tags: ["vegetarian", "baking"],
+      ingredients: [
+        "175g unsalted butter, softened",
+        "175g caster sugar",
+        "3 large eggs",
+        "175g self-raising flour",
+        "Zest of 2 lemons",
+        "4 tbsp milk",
+        "For drizzle: juice of 2 lemons",
+        "100g granulated sugar"
+      ],
+      steps: [
+        "Preheat oven to 180°C (160°C fan). Grease and line a 2lb loaf tin.",
+        "Beat butter and sugar together until pale and fluffy, about 4 minutes.",
+        "Beat in the eggs one at a time, adding a spoonful of flour with each to prevent curdling.",
+        "Fold in the remaining flour, lemon zest, and milk until just combined.",
+        "Pour into the prepared tin and bake for 40–45 minutes until a skewer comes out clean.",
+        "While the cake is still warm, mix the lemon juice and granulated sugar. Poke holes in the cake with a skewer.",
+        "Pour the drizzle all over the hot cake. Let it cool completely in the tin before slicing."
+      ]
+    },
+    {
+      id: 5,
+      emoji: "🧆",
+      title: "Crispy Chickpea Bowl",
+      category: "snack",
+      time: "30 min",
+      serves: "2",
+      difficulty: "Easy",
+      desc: "Oven-roasted spiced chickpeas with a yogurt dip — works as a light snack or a starter.",
+      tags: ["vegan", "high-protein"],
+      ingredients: [
+        "400g tin chickpeas, drained",
+        "2 tbsp olive oil",
+        "1 tsp cumin",
+        "1 tsp smoked paprika",
+        "½ tsp garlic powder",
+        "Salt and pepper",
+        "200g Greek yogurt",
+        "1 tbsp tahini",
+        "1 lemon, juiced",
+        "Fresh coriander to serve"
+      ],
+      steps: [
+        "Preheat oven to 220°C (200°C fan). Dry the chickpeas thoroughly with a kitchen towel — this is key to crispiness.",
+        "Toss chickpeas with olive oil, cumin, paprika, garlic powder, salt, and pepper.",
+        "Spread on a baking tray in a single layer. Roast for 25–30 minutes, shaking halfway, until golden and crunchy.",
+        "Mix yogurt with tahini, lemon juice, and a pinch of salt.",
+        "Spoon yogurt dip into bowls, pile the crispy chickpeas on top, and finish with fresh coriander."
+      ]
+    },
+    {
+      id: 6,
+      emoji: "🍳",
+      title: "Shakshuka",
+      category: "breakfast",
+      time: "30 min",
+      serves: "2",
+      difficulty: "Easy",
+      desc: "Eggs poached in a spiced tomato sauce. Dramatic to serve, easy to make, impossible to stop eating.",
+      tags: ["vegetarian", "one-pan"],
+      ingredients: [
+        "4 large eggs",
+        "400g tin chopped tomatoes",
+        "1 red pepper, sliced",
+        "1 onion, diced",
+        "3 garlic cloves, minced",
+        "1 tsp cumin",
+        "1 tsp smoked paprika",
+        "½ tsp chilli flakes",
+        "Feta and fresh parsley to serve",
+        "Crusty bread to serve"
+      ],
+      steps: [
+        "Heat olive oil in a wide oven-safe pan over medium heat. Cook the onion and pepper until soft, about 8 minutes.",
+        "Add garlic, cumin, paprika, and chilli flakes. Cook for 1 minute until fragrant.",
+        "Pour in the chopped tomatoes. Season with salt and pepper and simmer for 10 minutes.",
+        "Make 4 wells in the sauce with a spoon. Crack an egg into each well.",
+        "Cover the pan and cook on low heat for 5–8 minutes until whites are set but yolks are still runny.",
+        "Scatter over crumbled feta and fresh parsley. Serve straight from the pan with crusty bread."
+      ]
+    },
+    {
+      id: 7,
+      emoji: "🍜",
+      title: "Thai Green Curry",
+      category: "dinner",
+      time: "35 min",
+      serves: "4",
+      difficulty: "Medium",
+      desc: "Fragrant, creamy, and just the right amount of heat. Serve over jasmine rice for a proper meal.",
+      tags: ["dairy-free", "quick"],
+      ingredients: [
+        "2 tbsp green curry paste",
+        "400ml coconut milk",
+        "400g chicken breast, sliced",
+        "1 courgette, sliced",
+        "100g mangetout",
+        "1 red pepper, sliced",
+        "2 tbsp fish sauce",
+        "1 tbsp palm sugar or brown sugar",
+        "Juice of 1 lime",
+        "Fresh basil and jasmine rice to serve"
+      ],
+      steps: [
+        "Heat a little oil in a wok or large pan over high heat. Fry the curry paste for 1–2 minutes until fragrant.",
+        "Add the chicken and stir-fry for 3–4 minutes until just cooked through.",
+        "Pour in the coconut milk and bring to a gentle simmer.",
+        "Add the courgette and pepper. Cook for 5 minutes, then add the mangetout for the final 2 minutes.",
+        "Season with fish sauce, sugar, and lime juice. Taste and adjust — it should be salty, sour, and a little sweet.",
+        "Serve over jasmine rice with fresh basil leaves."
+      ]
+    },
+    {
+      id: 8,
+      emoji: "🍪",
+      title: "Brown Butter Chocolate Chip Cookies",
+      category: "dessert",
+      time: "40 min",
+      serves: "16",
+      difficulty: "Medium",
+      desc: "Browned butter gives these cookies a deep, nutty richness that makes them genuinely unforgettable.",
+      tags: ["vegetarian", "baking"],
+      ingredients: [
+        "170g unsalted butter",
+        "150g light brown sugar",
+        "50g caster sugar",
+        "1 large egg + 1 yolk",
+        "1 tsp vanilla extract",
+        "200g plain flour",
+        "½ tsp bicarbonate of soda",
+        "½ tsp salt",
+        "200g dark chocolate chips"
+      ],
+      steps: [
+        "Melt butter in a saucepan over medium heat, stirring constantly until it smells nutty and turns golden-brown, about 5 minutes. Pour into a bowl to cool for 10 minutes.",
+        "Whisk both sugars into the cooled brown butter until combined.",
+        "Add egg, egg yolk, and vanilla. Whisk vigorously for 1 minute — the batter should look glossy.",
+        "Stir in flour, bicarb, and salt until just combined. Fold in chocolate chips.",
+        "Chill the dough for at least 20 minutes (or overnight). Preheat oven to 190°C (170°C fan).",
+        "Roll dough into balls and place on lined baking trays with space to spread.",
+        "Bake for 10–12 minutes until edges are set but centres look slightly underdone. Cool on the tray for 5 minutes — they firm up as they cool."
+      ]
+    },
+    {
+      id: 9,
+      emoji: "🥙",
+      title: "Halloumi Pitta Wraps",
+      category: "lunch",
+      time: "20 min",
+      serves: "2",
+      difficulty: "Easy",
+      desc: "Golden grilled halloumi tucked into warm pitta with tzatziki and fresh veg. A brilliant quick lunch.",
+      tags: ["vegetarian", "quick"],
+      ingredients: [
+        "225g halloumi, sliced",
+        "2 pitta breads",
+        "1 handful rocket",
+        "1 tomato, sliced",
+        "½ cucumber, sliced",
+        "4 tbsp tzatziki",
+        "1 tsp olive oil",
+        "Squeeze of lemon",
+        "Pinch of dried mint"
+      ],
+      steps: [
+        "Pat halloumi slices dry. Heat a griddle or frying pan over high heat with a tiny drizzle of oil.",
+        "Cook halloumi for 2–3 minutes each side until deep golden-brown and slightly crispy.",
+        "Warm the pitta breads briefly in the toaster or on the griddle.",
+        "Spread a generous spoonful of tzatziki inside each pitta.",
+        "Stuff with rocket, tomato, cucumber, and halloumi. Squeeze lemon over and finish with a pinch of dried mint.",
+        "Serve immediately while the halloumi is hot and the pitta is warm."
+      ]
+    }
+  ];
+
+  /* ── State ─────────────────────────────────────────── */
+  let activeCategory = 'all';
+  let searchQuery = '';
+
+  /* ── Filter logic ──────────────────────────────────── */
+  function filtered() {
+    return recipes.filter(r => {
+      const matchCat = activeCategory === 'all' || r.category === activeCategory;
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q ||
+        r.title.toLowerCase().includes(q) ||
+        r.desc.toLowerCase().includes(q) ||
+        r.tags.some(t => t.includes(q)) ||
+        r.category.includes(q);
+      return matchCat && matchSearch;
+    });
+  }
+
+  /* ── Render cards ──────────────────────────────────── */
+  function render() {
+    const list = filtered();
+    const grid = document.getElementById('recipeGrid');
+    const bar  = document.getElementById('resultsBar');
+
+    bar.textContent = list.length === recipes.length
+      ? `${recipes.length} recipes`
+      : `${list.length} of ${recipes.length} recipes`;
+
+    if (list.length === 0) {
+      grid.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">🔍</div>
+          <h3>No recipes found</h3>
+          <p>Try a different search or category.</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map(r => `
+      <article class="card cat-${r.category}" onclick="openModal(${r.id})" tabindex="0" role="button" aria-label="View ${r.title}">
+        <div class="card-thumb">
+          <span role="img" aria-hidden="true">${r.emoji}</span>
+          <span class="card-category-badge">${capitalize(r.category)}</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">${r.title}</h2>
+          <div class="card-meta">
+            <span>⏱ ${r.time}</span>
+            <span>👤 Serves ${r.serves}</span>
+            <span>📊 ${r.difficulty}</span>
+          </div>
+          <p class="card-desc">${r.desc}</p>
+          <div class="card-footer">
+            <div class="tag-list">${r.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+            <button class="btn-view" onclick="event.stopPropagation(); openModal(${r.id})">View recipe →</button>
+          </div>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  /* ── Modal ─────────────────────────────────────────── */
+  function openModal(id) {
+    const r = recipes.find(x => x.id === id);
+    if (!r) return;
+
+    document.getElementById('modalEmoji').textContent = r.emoji;
+    document.getElementById('modalTitle').textContent = r.title;
+    document.getElementById('modalMeta').innerHTML =
+      `<span>⏱ ${r.time}</span><span>👤 Serves ${r.serves}</span><span>📊 ${r.difficulty}</span><span style="text-transform:capitalize">🏷 ${r.category}</span>`;
+    document.getElementById('modalDesc').textContent = r.desc;
+    document.getElementById('modalIngredients').innerHTML =
+      r.ingredients.map(i => `<li>${i}</li>`).join('');
+    document.getElementById('modalSteps').innerHTML =
+      r.steps.map((s, i) => `<li><div class="step-num">${i+1}</div><p>${s}</p></li>`).join('');
+
+    document.getElementById('overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modalClose').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  /* ── Event listeners ───────────────────────────────── */
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchQuery = e.target.value;
+    render();
+  });
+
+  document.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      activeCategory = btn.dataset.cat;
+      render();
+    });
+  });
+
+  /* ── Card keyboard nav ─────────────────────────────── */
+  document.getElementById('recipeGrid').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  /* ── Helpers ───────────────────────────────────────── */
+  function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+  /* ── Init ──────────────────────────────────────────── */
+  render();
+</script>
+</body>
+</html>
